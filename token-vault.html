@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+  <html>
+  <head><meta charset="utf-8"><title>TikTok Token Vault</title></head>
+<body>
+<p>TikTok token vault for The Fine Print's automation. Stores TikTok OAuth tokens in this browser's localStorage for this origin only, so the daily automation can refresh/use them without ever printing the raw values into the agent's conversation. Not linked from anywhere; safe to leave here.</p>
+  <script>
+  window.tiktokVault = {
+    set(accessToken, refreshToken, expiresInSec) {
+      const expiresAt = Date.now() + (expiresInSec * 1000);
+    localStorage.setItem('tt_access_token', accessToken);
+    localStorage.setItem('tt_refresh_token', refreshToken);
+    localStorage.setItem('tt_expires_at', String(expiresAt));
+    return { ok: true, expiresAt: new Date(expiresAt).toISOString() };
+},
+  get() {
+    return {
+            hasToken: !!localStorage.getItem('tt_access_token'),
+            expiresAt: localStorage.getItem('tt_expires_at')
+              ? new Date(Number(localStorage.getItem('tt_expires_at'))).toISOString()
+              : null,
+            isExpired: localStorage.getItem('tt_expires_at')
+              ? Date.now() > Number(localStorage.getItem('tt_expires_at'))
+              : true
+      };
+  },
+  clear() {
+    localStorage.removeItem('tt_access_token');
+    localStorage.removeItem('tt_refresh_token');
+    localStorage.removeItem('tt_expires_at');
+    return { ok: true };
+  },
+  async refresh(clientKey, clientSecret) {
+        const refreshToken = localStorage.getItem('tt_refresh_token');
+    if (!refreshToken) return { ok: false, error: 'no_refresh_token_stored' };
+    const resp = await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              client_key: clientKey,
+              client_secret: clientSecret,
+              grant_type: 'refresh_token',
+              refresh_token: refreshToken
+      })
+      });
+    const data = await resp.json();
+    if (data.access_token) {
+      this.set(data.access_token, data.refresh_token, data.expires_in);
+      return { ok: true, expiresIn: data.expires_in, scope: data.scope };
+    }
+    return { ok: false, error: data.error || 'unknown_error' };
+  },
+  async call(path, body) {
+        const accessToken = localStorage.getItem('tt_access_token');
+    if (!accessToken) return { ok: false, error: 'no_access_token_stored' };
+    const resp = await fetch('https://open.tiktokapis.com' + path, {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + accessToken,
+              'Content-Type': 'application/json; charset=UTF-8'
+      },
+            body: body ? JSON.stringify(body) : undefined
+      });
+    return await resp.json();
+  }
+};
+document.title = 'TikTok Token Vault — ready';
+</script>
+  </body>
+  </html>
+  
