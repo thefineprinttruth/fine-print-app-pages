@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <title>TikTok Authorization — Copy This Code</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; max-width: 600px; margin: 60px auto; padding: 0 20px; line-height: 1.6; color: #222; text-align: center; }
+  h1 { font-size: 1.4em; }
+  #code-box { font-family: monospace; font-size: 1.1em; background: #f2f2f2; border: 1px solid #ccc; border-radius: 6px; padding: 16px; word-break: break-all; margin: 24px 0; user-select: all; }
+  button { font-size: 1em; padding: 10px 20px; border-radius: 6px; border: none; background: #222; color: white; cursor: pointer; }
+  #error { color: #b00020; }
+</style>
+  </head>
+  <body>
+  <h1>TikTok Authorization</h1>
+  <p>Copy the code below and send it back in your Claude conversation.</p>
+  <div id="code-box">Reading code from URL…</div>
+<button onclick="copyCode()">Copy code</button>
+<p id="error"></p>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+  const box = document.getElementById('code-box');
+  const errBox = document.getElementById('error');
+
+  if (code) {
+    box.textContent = code;
+  } else if (error) {
+    box.textContent = '(no code received)';
+    errBox.textContent = 'TikTok returned an error: ' + error + ' — ' + (params.get('error_description') || '');
+  } else {
+    box.textContent = '(no code found in URL)';
+  }
+
+  function copyCode() {
+        navigator.clipboard.writeText(box.textContent).then(() => {
+      alert('Copied! Paste it back in your Claude conversation.');
+  });
+}
+</script>
+  </body>
+  </html>
